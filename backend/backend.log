@@ -1,0 +1,25 @@
+nohup: ignoring input
+
+> hackathon-management-backend@1.0.0 start
+> node server.js
+
+⚠️  Google OAuth not configured - missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET
+   OAuth login will not be available until proper credentials are provided
+[dotenv@17.2.2] injecting env (9) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+🚀 Server running on port 5000
+📍 Environment: development
+🔗 API Base URL: http://localhost:5000/api
+Server error: Error: listen EADDRINUSE: address already in use 0.0.0.0:5000
+    at Server.setupListenHandle [as _listen2] (node:net:1937:16)
+    at listenInCluster (node:net:1994:12)
+    at node:net:2203:7
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  code: 'EADDRINUSE',
+  errno: -98,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 5000
+}
+✅ Connected to MongoDB
+SIGTERM received, shutting down gracefully
+MongoDB connection closed
