@@ -4,7 +4,6 @@ const User = require('../models/User');
 // Middleware for optional authentication (doesn't fail if no token)
 const optionalAuth = async (req, res, next) => {
   try {
-    // Check for JWT token in Authorization header
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
@@ -22,52 +21,36 @@ const optionalAuth = async (req, res, next) => {
       }
     }
     
-    // Check for session-based authentication (fallback)
-    if (req.isAuthenticated && req.isAuthenticated() && req.user && req.user.isActive) {
-      // User is already set from session
-    }
-    
     return next();
-    
   } catch (error) {
     console.error('Optional authentication error:', error);
-    return next(); // Continue even if there's an error
+    return next();
   }
 };
 
 // Middleware to check if user is authenticated
 const isAuthenticated = async (req, res, next) => {
   try {
-    // Check for JWT token in Authorization header
     const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ message: 'Access token required' });
+    }
+
+    const token = authHeader.substring(7);
+    
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_jwt_secret');
+      const user = await User.findById(decoded.id);
       
-      try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const user = await User.findById(decoded.id);
-        
-        if (!user || !user.isActive) {
-          return res.status(401).json({ message: 'User not found or inactive' });
-        }
-        
-        req.user = user;
-        return next();
-      } catch (jwtError) {
-        return res.status(401).json({ message: 'Invalid token' });
+      if (!user || !user.isActive) {
+        return res.status(401).json({ message: 'User not found or inactive' });
       }
-    }
-    
-    // Check for session-based authentication (fallback)
-    if (req.isAuthenticated && req.isAuthenticated()) {
-      if (!req.user.isActive) {
-        return res.status(401).json({ message: 'User account is inactive' });
-      }
+      
+      req.user = user;
       return next();
+    } catch (jwtError) {
+      return res.status(401).json({ message: 'Invalid or expired token' });
     }
-    
-    return res.status(401).json({ message: 'Authentication required' });
-    
   } catch (error) {
     console.error('Authentication error:', error);
     return res.status(500).json({ message: 'Authentication error' });

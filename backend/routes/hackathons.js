@@ -118,7 +118,7 @@ router.delete('/:id', isAuthenticated, async (req, res) => {
   }
 });
 
-// Register for hackathon (students only)
+// Register for hackathon (students only) - Individual registration
 router.post('/:id/register', isAuthenticated, async (req, res) => {
   try {
     const hackathon = await Hackathon.findById(req.params.id);
@@ -129,6 +129,10 @@ router.post('/:id/register', isAuthenticated, async (req, res) => {
     
     if (hackathon.participants.includes(req.user.id)) {
       return res.status(400).json({ message: 'Already registered for this hackathon' });
+    }
+    
+    if (hackathon.isUserInTeam(req.user.id)) {
+      return res.status(400).json({ message: 'Already registered as part of a team' });
     }
     
     if (hackathon.participants.length >= hackathon.maxParticipants) {
@@ -143,6 +147,66 @@ router.post('/:id/register', isAuthenticated, async (req, res) => {
     await hackathon.save();
     
     res.json({ message: 'Successfully registered for hackathon' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Register team for hackathon (students only)
+router.post('/:id/register-team', isAuthenticated, async (req, res) => {
+  try {
+    const hackathon = await Hackathon.findById(req.params.id);
+    
+    if (!hackathon) {
+      return res.status(404).json({ message: 'Hackathon not found' });
+    }
+    
+    const { teamName, members } = req.body;
+    
+    // Validate team name
+    if (!teamName || teamName.trim().length === 0) {
+      return res.status(400).json({ message: 'Team name is required' });
+    }
+    
+    // Validate team size
+    if (!hackathon.isValidTeamSize(members.length)) {
+      return res.status(400).json({ 
+        message: `Team size must be between ${hackathon.teamSize.min} and ${hackathon.teamSize.max} members` 
+      });
+    }
+    
+    // Check if any member is already registered
+    for (const member of members) {
+      if (hackathon.participants.includes(member.user) || hackathon.isUserInTeam(member.user)) {
+        return res.status(400).json({ 
+          message: `User ${member.name} is already registered for this hackathon` 
+        });
+      }
+    }
+    
+    // Check if hackathon has space for the team
+    const totalParticipants = hackathon.participants.length + hackathon.getTotalTeamParticipants();
+    if (totalParticipants + members.length > hackathon.maxParticipants) {
+      return res.status(400).json({ message: 'Hackathon is full' });
+    }
+    
+    if (new Date() > hackathon.registrationDeadline) {
+      return res.status(400).json({ message: 'Registration deadline has passed' });
+    }
+    
+    // Create team
+    const team = {
+      teamName: teamName.trim(),
+      members: members.map((member, index) => ({
+        ...member,
+        role: index === 0 ? 'leader' : 'member'
+      }))
+    };
+    
+    hackathon.teams.push(team);
+    await hackathon.save();
+    
+    res.json({ message: 'Team registered successfully', team });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

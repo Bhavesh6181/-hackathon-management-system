@@ -28,12 +28,16 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
+      // Verify token is still valid
       const response = await authAPI.getCurrentUser();
       setUser(response.data);
       setIsAuthenticated(true);
     } catch (error) {
+      console.error('Auth check failed:', error);
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      setUser(null);
+      setIsAuthenticated(false);
     } finally {
       setLoading(false);
     }

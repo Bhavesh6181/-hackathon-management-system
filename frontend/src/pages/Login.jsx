@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -14,18 +14,15 @@ import {
   Eye, 
   EyeOff,
   Loader2,
-  Chrome,
   TestTube,
-  Phone
 } from 'lucide-react';
 
 const Login = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const { login, isAuthenticated } = useAuth();
   
   // State for different login methods
-  const [activeTab, setActiveTab] = useState('google');
+  const [activeTab, setActiveTab] = useState('login');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
@@ -35,7 +32,6 @@ const Login = () => {
     email: '',
     password: '',
     name: '',
-    mobile: '',
     confirmPassword: '',
     role: 'student'
   });
@@ -45,33 +41,8 @@ const Login = () => {
   useEffect(() => {
     if (isAuthenticated) {
       navigate('/dashboard');
-      return;
     }
-
-    // Handle OAuth callback
-    const token = searchParams.get('token');
-    if (token) {
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        login(token, payload);
-        navigate('/dashboard');
-      } catch (error) {
-        console.error('Token parsing error:', error);
-      }
-    }
-
-    // Handle OAuth errors
-    const error = searchParams.get('error');
-    if (error === 'google_oauth_not_configured') {
-      setErrors({
-        general: 'Google OAuth is not configured. Please use email login or demo login instead.'
-      });
-    } else if (error === 'oauth_failed') {
-      setErrors({
-        general: 'Google authentication failed. Please try again or use email login.'
-      });
-    }
-  }, [searchParams, login, navigate, isAuthenticated]);
+  }, [isAuthenticated, navigate]);
 
   // Handle form input changes
   const handleInputChange = (e) => {
@@ -97,10 +68,6 @@ const Login = () => {
   };
 
   // Validate Indian mobile number format
-  const validateMobile = (mobile) => {
-    const mobileRegex = /^(\+91|91)?[6-9]\d{9}$/;
-    return mobileRegex.test(mobile);
-  };
 
   // Validate form
   const validateForm = () => {
@@ -123,11 +90,6 @@ const Login = () => {
         newErrors.name = 'Name is required';
       }
       
-      if (!formData.mobile) {
-        newErrors.mobile = 'Mobile number is required';
-      } else if (!validateMobile(formData.mobile)) {
-        newErrors.mobile = 'Please enter a valid Indian mobile number';
-      }
       
       if (!formData.confirmPassword) {
         newErrors.confirmPassword = 'Please confirm your password';
@@ -140,16 +102,8 @@ const Login = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Handle Google OAuth login
-  const handleGoogleLogin = () => {
-    setLoading(true);
-    // Clear any existing errors
-    setErrors({});
-    authAPI.googleLogin();
-  };
-
-  // Handle manual login/register
-  const handleManualAuth = async (e) => {
+  // Handle login/register
+  const handleAuth = async (e) => {
     e.preventDefault();
     
     if (!validateForm()) {
@@ -166,7 +120,6 @@ const Login = () => {
           name: formData.name,
           email: formData.email,
           password: formData.password,
-          mobile: formData.mobile,
           role: formData.role
         });
       } else {
@@ -195,9 +148,7 @@ const Login = () => {
   const handleDemoLogin = async (selectedRole = 'student') => {
     setLoading(true);
     try {
-      const response = await authAPI.dummyLogin({
-        email: `demo-${selectedRole}@hackhub.com`,
-        name: `Demo ${selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1)}`,
+      const response = await authAPI.demoLogin({
         role: selectedRole
       });
       if (response.data.token) {
@@ -246,38 +197,13 @@ const Login = () => {
 
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-6 bg-gray-100/50 dark:bg-gray-800/50 backdrop-blur-sm">
-              <TabsTrigger value="google" className="text-xs">Google</TabsTrigger>
-              <TabsTrigger value="manual" className="text-xs">Email</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 mb-6 bg-gray-100/50 dark:bg-gray-800/50 backdrop-blur-sm">
+              <TabsTrigger value="login" className="text-xs">Login</TabsTrigger>
               <TabsTrigger value="demo" className="text-xs">Demo</TabsTrigger>
             </TabsList>
 
-            {/* Google OAuth Tab */}
-            <TabsContent value="google" className="space-y-4">
-              <Button
-                onClick={handleGoogleLogin}
-                disabled={loading}
-                className="w-full h-12 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 shadow-sm hover:shadow-md transition-all duration-200 group"
-              >
-                {loading ? (
-                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                ) : (
-                  <Chrome className="w-5 h-5 mr-2 text-blue-500 group-hover:scale-110 transition-transform" />
-                )}
-                Continue with Google
-              </Button>
-              <p className="text-xs text-center text-gray-500 dark:text-gray-400">
-                Secure authentication with your Google account
-              </p>
-              <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                <p className="text-xs text-blue-700 dark:text-blue-300">
-                  <strong>Note:</strong> Google OAuth requires proper configuration. If it doesn't work, use the Email or Demo login options below.
-                </p>
-              </div>
-            </TabsContent>
-
-            {/* Manual Login/Register Tab */}
-            <TabsContent value="manual" className="space-y-4">
+            {/* Login/Register Tab */}
+            <TabsContent value="login" className="space-y-4">
               <div className="flex items-center justify-center space-x-2 mb-4">
                 <Button
                   variant={!isRegistering ? "default" : "outline"}
@@ -297,7 +223,7 @@ const Login = () => {
                 </Button>
               </div>
 
-              <form onSubmit={handleManualAuth} className="space-y-4">
+              <form onSubmit={handleAuth} className="space-y-4">
                 {isRegistering && (
                   <>
                     <div className="space-y-2">
@@ -317,22 +243,6 @@ const Login = () => {
                       {errors.name && <p className="text-red-500 text-xs">{errors.name}</p>}
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="mobile" className="text-sm font-medium">Mobile Number</Label>
-                      <div className="relative">
-                        <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                        <Input
-                          id="mobile"
-                          name="mobile"
-                          type="tel"
-                          placeholder="+91 98765 43210"
-                          value={formData.mobile}
-                          onChange={handleInputChange}
-                          className="pl-10 h-11 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200 dark:border-gray-700 focus:border-blue-500 transition-colors"
-                        />
-                      </div>
-                      {errors.mobile && <p className="text-red-500 text-xs">{errors.mobile}</p>}
-                    </div>
                   </>
                 )}
 

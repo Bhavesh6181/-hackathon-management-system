@@ -34,12 +34,10 @@ api.interceptors.response.use(
 export const authAPI = {
   getCurrentUser: () => api.get('/auth/me'),
   logout: () => api.post('/auth/logout'),
-  googleLogin: () => {
-    window.location.href = `${API_BASE_URL}/auth/google`;
-  },
   login: (credentials) => api.post('/auth/login', credentials),
   register: (userData) => api.post('/auth/register', userData),
-  dummyLogin: (data) => api.post('/auth/dummy-login', data),
+  demoLogin: (data) => api.post('/auth/demo-login', data),
+  verifyToken: (token) => api.post('/auth/verify', { token }),
 };
 
 // Hackathons API
@@ -50,6 +48,7 @@ export const hackathonsAPI = {
   update: (id, data) => api.put(`/hackathons/${id}`, data),
   delete: (id) => api.delete(`/hackathons/${id}`),
   register: (id) => api.post(`/hackathons/${id}/register`),
+  registerTeam: (id, teamData) => api.post(`/hackathons/${id}/register-team`, teamData),
   unregister: (id) => api.post(`/hackathons/${id}/unregister`),
   getMyHackathons: () => api.get('/hackathons/user/my-hackathons'),
   approve: (id) => api.post(`/hackathons/${id}/approve`),

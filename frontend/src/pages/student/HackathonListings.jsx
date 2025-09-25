@@ -5,6 +5,7 @@ import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Badge } from '../../components/ui/badge';
 import { hackathonsAPI } from '../../lib/api';
+import TeamRegistrationModal from '../../components/TeamRegistrationModal';
 import { 
   Calendar, 
   MapPin, 
@@ -13,7 +14,8 @@ import {
   Trophy,
   Search,
   Filter,
-  ArrowRight
+  ArrowRight,
+  UserPlus
 } from 'lucide-react';
 
 const HackathonListings = () => {
@@ -23,6 +25,8 @@ const HackathonListings = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [registering, setRegistering] = useState(null);
+  const [showTeamModal, setShowTeamModal] = useState(false);
+  const [selectedHackathonForTeam, setSelectedHackathonForTeam] = useState(null);
 
   useEffect(() => {
     fetchHackathons();
@@ -69,6 +73,19 @@ const HackathonListings = () => {
     } finally {
       setRegistering(null);
     }
+  };
+
+  const handleTeamRegister = (hackathon) => {
+    setSelectedHackathonForTeam(hackathon);
+    setShowTeamModal(true);
+  };
+
+  const handleTeamRegistrationSuccess = () => {
+    // Refresh hackathon details
+    if (selectedHackathon) {
+      fetchHackathonDetails(selectedHackathon._id);
+    }
+    fetchHackathons();
   };
 
   const filteredHackathons = hackathons.filter(hackathon =>
@@ -189,24 +206,27 @@ const HackathonListings = () => {
               )}
 
               <div className="pt-6 border-t">
-                <Button 
-                  onClick={() => handleRegister(selectedHackathon._id)}
-                  disabled={registering === selectedHackathon._id || new Date() > new Date(selectedHackathon.registrationDeadline)}
-                  className="w-full md:w-auto"
-                  size="lg"
-                >
-                  {registering === selectedHackathon._id ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Registering...
-                    </>
-                  ) : (
-                    'Register for Hackathon'
+                <div className="space-y-4">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h4 className="font-semibold text-blue-900 mb-2">Team Registration Required</h4>
+                    <p className="text-blue-700 text-sm mb-3">
+                      This hackathon requires team participation. Form a team of {selectedHackathon.teamSize?.min || 3}-{selectedHackathon.teamSize?.max || 4} members to register.
+                    </p>
+                    <Button 
+                      onClick={() => handleTeamRegister(selectedHackathon)}
+                      disabled={new Date() > new Date(selectedHackathon.registrationDeadline)}
+                      className="w-full md:w-auto"
+                      size="lg"
+                    >
+                      <UserPlus className="w-5 h-5 mr-2" />
+                      Register Team
+                    </Button>
+                  </div>
+                  
+                  {new Date() > new Date(selectedHackathon.registrationDeadline) && (
+                    <p className="text-red-600 text-sm">Registration deadline has passed</p>
                   )}
-                </Button>
-                {new Date() > new Date(selectedHackathon.registrationDeadline) && (
-                  <p className="text-red-600 text-sm mt-2">Registration deadline has passed</p>
-                )}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -294,15 +314,12 @@ const HackathonListings = () => {
                       </Link>
                     </Button>
                     <Button 
-                      onClick={() => handleRegister(hackathon._id)}
-                      disabled={registering === hackathon._id || new Date() > new Date(hackathon.registrationDeadline)}
+                      onClick={() => handleTeamRegister(hackathon)}
+                      disabled={new Date() > new Date(hackathon.registrationDeadline)}
                       className="flex-1"
                     >
-                      {registering === hackathon._id ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      ) : (
-                        'Register'
-                      )}
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      Register Team
                     </Button>
                   </div>
                 </CardContent>
@@ -321,6 +338,14 @@ const HackathonListings = () => {
           </Card>
         )}
       </div>
+
+      {/* Team Registration Modal */}
+      <TeamRegistrationModal
+        isOpen={showTeamModal}
+        onClose={() => setShowTeamModal(false)}
+        hackathon={selectedHackathonForTeam}
+        onSuccess={handleTeamRegistrationSuccess}
+      />
     </div>
   );
 };

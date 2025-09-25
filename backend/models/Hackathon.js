@@ -56,6 +56,60 @@ const hackathonSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }],
+  teams: [{
+    teamName: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    members: [{
+      user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+      },
+      name: {
+        type: String,
+        required: true
+      },
+      email: {
+        type: String,
+        required: true
+      },
+      phone: {
+        type: String,
+        required: true
+      },
+      college: {
+        type: String,
+        required: true
+      },
+      year: {
+        type: String,
+        required: true
+      },
+      skills: [String],
+      role: {
+        type: String,
+        enum: ['leader', 'member'],
+        default: 'member'
+      }
+    }],
+    registeredAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+  teamSize: {
+    min: {
+      type: Number,
+      default: 3
+    },
+    max: {
+      type: Number,
+      default: 4
+    }
+  },
   status: {
     type: String,
     enum: ['upcoming', 'ongoing', 'completed', 'cancelled'],
@@ -147,6 +201,34 @@ hackathonSchema.methods.isUserRegistered = function(userId) {
   return this.participants.some(participant => 
     participant.toString() === userId.toString()
   );
+};
+
+// Method to check if user is in any team
+hackathonSchema.methods.isUserInTeam = function(userId) {
+  return this.teams.some(team => 
+    team.members.some(member => 
+      member.user.toString() === userId.toString()
+    )
+  );
+};
+
+// Method to get team by user ID
+hackathonSchema.methods.getTeamByUserId = function(userId) {
+  return this.teams.find(team => 
+    team.members.some(member => 
+      member.user.toString() === userId.toString()
+    )
+  );
+};
+
+// Method to validate team size
+hackathonSchema.methods.isValidTeamSize = function(teamSize) {
+  return teamSize >= this.teamSize.min && teamSize <= this.teamSize.max;
+};
+
+// Method to get total team participants count
+hackathonSchema.methods.getTotalTeamParticipants = function() {
+  return this.teams.reduce((total, team) => total + team.members.length, 0);
 };
 
 // Pre-save middleware to update status based on dates

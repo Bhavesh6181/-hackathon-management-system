@@ -1,9 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const session = require('express-session');
-const MongoStore = require('connect-mongo');
-const passport = require('./config/passport');
 require('dotenv').config();
 
 const app = express();
@@ -68,26 +65,7 @@ const connectDB = async () => {
 // Connect to database
 connectDB();
 
-// Session configuration with MongoDB store
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'fallback_session_secret_change_in_production',
-  resave: false,
-  saveUninitialized: false,
-  store: MongoStore.create({
-    mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/hackathon_management',
-    touchAfter: 24 * 3600 // lazy session update
-  }),
-  cookie: {
-    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
-    httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
-  }
-}));
-
-// Passport middleware
-app.use(passport.initialize());
-app.use(passport.session());
+// No session management needed for JWT-based auth
 
 // Request logging middleware
 app.use((req, res, next) => {

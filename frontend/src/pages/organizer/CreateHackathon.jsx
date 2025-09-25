@@ -5,6 +5,7 @@ import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Textarea } from '../../components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { hackathonsAPI } from '../../lib/api';
 import { Plus, Calendar, MapPin, Users, Trophy } from 'lucide-react';
 
@@ -19,6 +20,7 @@ const CreateHackathon = () => {
     registrationDeadline: '',
     location: '',
     maxParticipants: 100,
+    teamSize: { min: 3, max: 4 },
     contactEmail: '',
     website: '',
     requirements: '',
@@ -26,11 +28,111 @@ const CreateHackathon = () => {
     prizes: [{ position: '1st Place', amount: '', description: '' }]
   });
 
+  const indianCities = [
+    'Mumbai, Maharashtra',
+    'Delhi, Delhi',
+    'Bangalore, Karnataka',
+    'Hyderabad, Telangana',
+    'Chennai, Tamil Nadu',
+    'Kolkata, West Bengal',
+    'Pune, Maharashtra',
+    'Ahmedabad, Gujarat',
+    'Jaipur, Rajasthan',
+    'Lucknow, Uttar Pradesh',
+    'Kanpur, Uttar Pradesh',
+    'Nagpur, Maharashtra',
+    'Indore, Madhya Pradesh',
+    'Thane, Maharashtra',
+    'Bhopal, Madhya Pradesh',
+    'Visakhapatnam, Andhra Pradesh',
+    'Pimpri-Chinchwad, Maharashtra',
+    'Patna, Bihar',
+    'Vadodara, Gujarat',
+    'Ghaziabad, Uttar Pradesh',
+    'Ludhiana, Punjab',
+    'Agra, Uttar Pradesh',
+    'Nashik, Maharashtra',
+    'Faridabad, Haryana',
+    'Meerut, Uttar Pradesh',
+    'Rajkot, Gujarat',
+    'Kalyan-Dombivali, Maharashtra',
+    'Vasai-Virar, Maharashtra',
+    'Varanasi, Uttar Pradesh',
+    'Srinagar, Jammu and Kashmir',
+    'Aurangabad, Maharashtra',
+    'Navi Mumbai, Maharashtra',
+    'Solapur, Maharashtra',
+    'Vijayawada, Andhra Pradesh',
+    'Kolhapur, Maharashtra',
+    'Amritsar, Punjab',
+    'Noida, Uttar Pradesh',
+    'Ranchi, Jharkhand',
+    'Howrah, West Bengal',
+    'Coimbatore, Tamil Nadu',
+    'Raipur, Chhattisgarh',
+    'Kota, Rajasthan',
+    'Jabalpur, Madhya Pradesh',
+    'Gwalior, Madhya Pradesh',
+    'Chandigarh, Chandigarh',
+    'Tiruchirappalli, Tamil Nadu',
+    'Mysore, Karnataka',
+    'Bhubaneswar, Odisha',
+    'Kochi, Kerala',
+    'Bhavnagar, Gujarat',
+    'Salem, Tamil Nadu',
+    'Warangal, Telangana',
+    'Guntur, Andhra Pradesh',
+    'Bhiwandi, Maharashtra',
+    'Amravati, Maharashtra',
+    'Nanded, Maharashtra',
+    'Kolhapur, Maharashtra',
+    'Sangli, Maharashtra',
+    'Malegaon, Maharashtra',
+    'Ulhasnagar, Maharashtra',
+    'Jalgaon, Maharashtra',
+    'Latur, Maharashtra',
+    'Ahmadnagar, Maharashtra',
+    'Dhule, Maharashtra',
+    'Ichalkaranji, Maharashtra',
+    'Parbhani, Maharashtra',
+    'Jalna, Maharashtra',
+    'Bhusawal, Maharashtra',
+    'Panvel, Maharashtra',
+    'Satara, Maharashtra',
+    'Beed, Maharashtra',
+    'Yavatmal, Maharashtra',
+    'Kamptee, Maharashtra',
+    'Gondia, Maharashtra',
+    'Barshi, Maharashtra',
+    'Achalpur, Maharashtra',
+    'Osmanabad, Maharashtra',
+    'Nandurbar, Maharashtra',
+    'Wardha, Maharashtra',
+    'Udgir, Maharashtra',
+    'Aurangabad, Maharashtra',
+    'Amalner, Maharashtra',
+    'Akot, Maharashtra',
+    'Pandharpur, Maharashtra',
+    'Shirpur, Maharashtra',
+    'Paratwada, Maharashtra',
+    'Virtual/Online'
+  ];
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
+    }));
+  };
+
+  const handleTeamSizeChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      teamSize: {
+        ...prev.teamSize,
+        [field]: parseInt(value)
+      }
     }));
   };
 
@@ -133,14 +235,21 @@ const CreateHackathon = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="location">Location *</Label>
-                    <Input
-                      id="location"
-                      name="location"
+                    <Select
                       value={formData.location}
-                      onChange={handleChange}
-                      placeholder="e.g., Mumbai, Maharashtra or Virtual"
-                      required
-                    />
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, location: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a city" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {indianCities.map((city) => (
+                          <SelectItem key={city} value={city}>
+                            {city}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="space-y-2">
@@ -155,6 +264,56 @@ const CreateHackathon = () => {
                       required
                     />
                   </div>
+                </div>
+
+                {/* Team Size Configuration */}
+                <div className="space-y-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h4 className="font-semibold text-blue-900">Team Configuration</h4>
+                  <p className="text-sm text-blue-700">
+                    Configure the team size requirements for this hackathon. Teams must have between the minimum and maximum number of members.
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="teamSizeMin">Minimum Team Size *</Label>
+                      <Select
+                        value={formData.teamSize.min.toString()}
+                        onValueChange={(value) => handleTeamSizeChange('min', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="2">2 members</SelectItem>
+                          <SelectItem value="3">3 members</SelectItem>
+                          <SelectItem value="4">4 members</SelectItem>
+                          <SelectItem value="5">5 members</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="teamSizeMax">Maximum Team Size *</Label>
+                      <Select
+                        value={formData.teamSize.max.toString()}
+                        onValueChange={(value) => handleTeamSizeChange('max', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="3">3 members</SelectItem>
+                          <SelectItem value="4">4 members</SelectItem>
+                          <SelectItem value="5">5 members</SelectItem>
+                          <SelectItem value="6">6 members</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  {formData.teamSize.min > formData.teamSize.max && (
+                    <p className="text-sm text-red-600">
+                      Maximum team size must be greater than or equal to minimum team size.
+                    </p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -271,7 +430,7 @@ const CreateHackathon = () => {
                       <Input
                         value={prize.amount}
                         onChange={(e) => handlePrizeChange(index, 'amount', e.target.value)}
-                        placeholder="e.g., ₹50,000"
+                        placeholder="e.g., ₹50,000 or Laptop"
                       />
                     </div>
                     <div className="space-y-2">
